@@ -1,6 +1,10 @@
 # Mover360: Controllable Object Manipulation in 360° Panoramic Images
 
-Mover360 performs controllable object manipulation directly on equirectangular (ERP) panoramas. It centers on object **Translation** (relocating a specified object with a single click) and supports **Insert** and **Remove** as auxiliary tasks in the same model — a LoRA adaptation of Flux2-Klein-4B-Base conditioned on a three-channel ERP-aligned instruction map and an auxiliary DA² depth map.
+**Project page:** https://zhonghaoyi.github.io/Mover360/
+
+Mover360 performs controllable object manipulation natively on equirectangular (ERP) 360° panoramas — point-, bbox-, and mask-guided object **translation**, **insertion**, and **removal**. It centers on object Translation (relocating a specified object with a single click), with Insert and Remove supported as auxiliary tasks in the same model: a LoRA adaptation of Flux2-Klein-4B-Base conditioned on a three-channel ERP-aligned instruction map and an auxiliary DA² depth map.
+
+Paper and dataset links will be added upon release.
 
 ## Environment
 
@@ -55,3 +59,5 @@ python interactive.py --help
 ```
 
 Launches a browser-based editor for point-, bbox-, and mask-guided panorama editing.
+
+<sub>Site template adapted from the [World-Shaper](https://world-shaper-project.github.io/) project page · 360° viewer: [Pannellum](https://pannellum.org/) (MIT)</sub>

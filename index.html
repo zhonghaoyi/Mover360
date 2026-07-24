@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mover360: Controllable Object Manipulation in 360° Panoramic Images</title>
+    <meta name="description" content="Mover360 — point-, bbox-, and mask-guided object translation, insertion, and removal performed natively on equirectangular 360° panoramas.">
+    <link rel="icon" type="image/png" href="figures/logo.png">
+    <link rel="stylesheet" href="pannellum/pannellum.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root{
+            --bg: #fafbfd;
+            --surface: #ffffff;
+            --hairline: rgba(15,23,42,0.08);
+            --hairline-strong: rgba(15,23,42,0.14);
+            --text: #0f172a;
+            --muted: #52627a;
+            --muted2: #8a97a8;
+            --accent: #1291d8;
+            --accent2: #7856ff;
+            --accent3: #0fb5a0;
+            --accent-soft: rgba(18,145,216,0.09);
+            --plate: #0a0d13;
+            --radius: 14px;
+            --shadow-soft: 0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.05);
+        }
+
+        html { scroll-behavior: smooth; }
+        html, body { min-height: 100%; }
+        section[id] { scroll-margin-top: 74px; }
+        body{
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(1100px 460px at 6% 0%, rgba(18,145,216,0.05), transparent 60%),
+                radial-gradient(1000px 480px at 96% 10%, rgba(120,86,252,0.05), transparent 60%),
+                var(--bg);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---------- Top banner ---------- */
+        .top-banner {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            width: 100%;
+            background: rgba(250,251,253,0.85);
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--hairline);
+        }
+        .top-banner-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            height: 62px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand img { height: 32px; width: 32px; display: block; background: var(--plate); border-radius: 8px; padding: 3px; box-sizing: border-box; }
+        .brand .title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; }
+
+        .top-nav { display: none; }
+        @media (min-width: 900px) {
+            .top-nav { display: flex; align-items: center; gap: 4px; }
+        }
+        .top-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14.5px;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: color 160ms ease, background 160ms ease;
+        }
+        .top-nav a:not(.btn-demo):hover { color: var(--text); background: rgba(15,23,42,0.05); }
+        .btn-demo {
+            display: inline-flex; align-items: center; gap: 8px;
+            margin-left: 10px;
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: linear-gradient(120deg, var(--accent), var(--accent2));
+            color: #ffffff;
+            font-size: 14px; font-weight: 600;
+            text-decoration: none;
+            transition: filter 160ms ease, transform 160ms ease;
+        }
+        .top-nav a.btn-demo, .top-nav a.btn-demo:hover { color: #ffffff; }
+        .btn-demo:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+        /* ---------- Layout ---------- */
+        .container { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
+        section { padding: 32px 0; }
+        h2 { margin: 0 0 12px; font-size: 30px; letter-spacing: -0.02em; color: var(--text); }
+        p { margin: 10px 0; line-height: 1.75; color: var(--muted); }
+        .section-subtitle { margin: 8px auto 0; font-size: 16px; color: var(--muted); text-align: center; max-width: 54rem; line-height: 1.7; }
+        .section-subtitle b { color: var(--text); font-weight: 600; }
+        #gallery h2 { text-align: center; color: var(--text); }
+
+        .gradient-text {
+            background: linear-gradient(105deg, #0f172a 0%, var(--accent) 62%, var(--accent2) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* ---------- Hero ---------- */
+        .hero-pattern {
+            position: relative;
+            padding: 42px 0 38px;
+            overflow: hidden;
+            background:
+                radial-gradient(760px 400px at 22% -8%, rgba(18,145,216,0.12), transparent 62%),
+                radial-gradient(760px 400px at 78% -4%, rgba(120,86,252,0.10), transparent 62%),
+                radial-gradient(900px 340px at 50% 112%, rgba(15,181,160,0.07), transparent 60%),
+                linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+            border-bottom: 1px solid var(--hairline);
+        }
+        .hero-content { position: relative; z-index: 10; }
+        .text-shadow { text-shadow: none; }
+        .hero-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        .hero-logo {
+            display: block;
+            margin: 0 auto 16px;
+            width: 196px;
+            max-width: 56vw;
+            height: auto;
+            background: var(--plate);
+            border-radius: 22px;
+            padding: 16px;
+            box-sizing: content-box;
+            box-shadow: 0 18px 44px rgba(10,13,19,0.28);
+        }
+        .hero-title {
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+            margin: 0 auto 12px;
+            max-width: 60rem;
+        }
+        .hero-sub {
+            margin: 10px auto 0;
+            color: var(--muted);
+            text-align: center;
+            max-width: 48rem;
+            font-size: 18px;
+            line-height: 1.75;
+        }
+
+        .hero-features {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .hero-feature-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            background: var(--surface);
+            border: 1px solid var(--hairline-strong);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 160ms ease, border-color 160ms ease, transform 160ms ease;
+        }
+        .hero-feature-badge i { font-size: 14px; color: var(--accent); }
+        .hero-feature-badge:nth-child(2) i { color: #24292f; }
+        .hero-feature-badge:nth-child(3) i { color: var(--accent3); }
+        .hero-feature-badge:hover { color: var(--text); border-color: rgba(18,145,216,0.5); transform: translateY(-1px); }
+
+        .author-list { margin-top: 22px; display: flex; justify-content: center; }
+        .author-card { text-align: center; padding: 0 12px; }
+        .author-card .names { font-size: 18px; font-weight: 500; color: var(--text); line-height: 2; }
+        .author-card .names .au { white-space: nowrap; margin: 0 10px; }
+        .author-card .names sup { font-size: 11px; color: var(--accent); font-weight: 600; }
+        .author-card .aff-list { margin-top: 10px; font-size: 14.5px; color: var(--muted); line-height: 1.8; }
+        .author-card .aff-list sup { font-size: 10px; color: var(--accent); }
+        .author-card .notes { margin-top: 10px; font-size: 13px; color: var(--muted2); }
+        .author-card .notes sup { color: var(--accent); }
+
+        /* ---------- Section headers ---------- */
+        .section-header { text-align: center; margin-bottom: 16px; }
+        .section-header h2 { margin: 0; font-size: 30px; font-weight: 700; color: var(--text); }
+        .section-header .bar { margin: 10px auto 0; height: 3px; width: 56px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; }
+
+        /* ---------- Gallery tabs ---------- */
+        .task-tabs {
+            display: inline-flex;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin: 14px 0 16px;
+            padding: 4px;
+            background: rgba(15,23,42,0.05);
+            border: 1px solid var(--hairline);
+            border-radius: 999px;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .task-tab {
+            padding: 9px 20px;
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+            font-family: inherit;
+        }
+        .task-tab:hover { color: var(--text); }
+        .task-tab.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(15,23,42,0.12); }
+        .task-tab[data-task="insertion"].active { color: var(--accent2); }
+        .task-tab[data-task="removal"].active { color: var(--accent3); }
+        .task-tab .count { font-size: 11.5px; font-weight: 500; opacity: 0.75; margin-left: 6px; }
+
+        /* ---------- Editing gallery strip ---------- */
+        .editing-panel { padding: 0; }
+        .editing-wrap { position: relative; max-width: 1140px; margin: 0 auto; }
+        .editing-strip {
+            display: flex;
+            gap: 14px;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            padding: 4px 56px 8px;
+            scrollbar-width: none;
+        }
+        .editing-strip::-webkit-scrollbar { display: none; }
+        .editing-item {
+            flex: 0 0 540px;
+            width: 540px;
+            min-width: 500px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            position: relative;
+        }
+        @media (max-width: 980px) {
+            .editing-item { flex: 0 0 420px; width: 420px; min-width: 380px; }
+        }
+        @media (max-width: 720px) {
+            .editing-item { flex: 0 0 340px; width: 340px; min-width: 300px; }
+        }
+
+        .coming-soon-card {
+            flex: 1 1 100%;
+            min-height: 240px;
+            border: 1px dashed var(--hairline-strong);
+            border-radius: var(--radius);
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--muted);
+            text-align: center;
+            padding: 24px;
+        }
+        .coming-soon-card .icon { font-size: 34px; }
+        .coming-soon-card .cs-title { font-size: 19px; font-weight: 600; color: var(--text); }
+        .coming-soon-card .cs-sub { font-size: 14.5px; max-width: 32rem; line-height: 1.7; color: var(--muted2); }
+
+        .demo-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 42px;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.95);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 160ms ease, border-color 160ms ease;
+            opacity: 0.97;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(15,23,42,0.1);
+        }
+        .demo-nav-btn:hover { transform: translateY(-50%) scale(1.06); border-color: rgba(18,145,216,0.55); }
+        .demo-prev { left: 6px; }
+        .demo-next { right: 6px; }
+
+        /* ---------- Content cards ---------- */
+        .abstract-card, .approach-card, .results-card, .applications-card {
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: var(--radius);
+            padding: 22px 26px;
+            max-width: 940px;
+            margin: 0 auto;
+            box-shadow: var(--shadow-soft);
+        }
+        .approach-card { max-width: 1100px; }
+        .prose, .approach-prose { color: var(--muted); font-size: 16.5px; line-height: 1.85; }
+        .prose p, .approach-prose p { margin: 0 0 16px; }
+        .prose b, .approach-prose b { color: var(--text); font-weight: 600; }
+        .text-primary-600 { color: var(--accent); }
+        .text-green-600 { color: #1f2c3d; font-weight: 500; }
+
+        .placeholder-note {
+            display: inline-block;
+            background: rgba(245,158,11,0.09);
+            border: 1px solid rgba(217,119,6,0.35);
+            color: #b45309;
+            border-radius: 8px;
+            padding: 3px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        /* ---------- Motivation ---------- */
+        .motivation-figure {
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: var(--radius);
+            padding: 14px;
+            max-width: 1100px;
+            margin: 0 auto 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: var(--shadow-soft);
+        }
+        .motivation-figure .motivation-img { flex: 0 0 auto; max-width: 100%; min-width: 0; display: flex; }
+        .motivation-figure .motivation-img img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+            border: 1px solid var(--hairline);
+        }
+        .motivation-figure .motivation-text {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .motivation-card {
+            background: #fbfcfe;
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .motivation-card h3 { margin: 0 0 10px; font-size: 17px; font-weight: 600; color: var(--accent); }
+        .motivation-card:nth-child(2) h3 { color: var(--accent2); }
+        .motivation-card p, .motivation-card li { color: var(--muted); font-size: 15px; line-height: 1.75; }
+        .motivation-card b { color: var(--text); font-weight: 600; }
+        .motivation-card ul { padding-left: 18px; list-style: disc; }
+        .motivation-card li::marker { color: var(--muted2); }
+        @media (max-width: 900px) {
+            .motivation-figure .motivation-text { grid-template-columns: 1fr; }
+        }
+
+        .approach-figure { margin-bottom: 14px; }
+        .approach-figure img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+            border: 1px solid var(--hairline);
+        }
+
+        .results-figure {
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: var(--radius);
+            padding: 14px;
+            max-width: 1000px;
+            margin: 0 auto 6px;
+            box-shadow: var(--shadow-soft);
+        }
+        .results-figure img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+            border: 1px solid var(--hairline);
+        }
+        .results-figure .fig-caption { text-align: center; color: var(--muted); margin: 14px 0 0; font-size: 15px; line-height: 1.7; }
+        .results-figure .fig-caption b { color: var(--text); }
+
+        /* ---------- Comparison (quad) strip ---------- */
+        .quad-wrap { position: relative; max-width: 1140px; margin: 0 auto; }
+        .quad-strip { display: flex; gap: 12px; overflow: hidden; scroll-behavior: smooth; justify-content: flex-start; }
+        .quad-item { flex: 0 0 100%; width: 100%; min-width: 100%; border-radius: var(--radius); overflow: hidden; }
+        .quad-caption {
+            margin-top: 10px;
+            padding: 12px 14px;
+            font-size: 15px;
+            color: var(--muted);
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .quad-caption strong { color: var(--text); }
+        .quad-caption img.ref-thumb {
+            height: 72px;
+            width: 72px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(15,23,42,0.18);
+        }
+        .quad-caption .ref-box { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--muted2); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+        .quad-caption a.instr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--muted2);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+        .quad-caption a.instr-box:hover { color: var(--accent); }
+        .quad-caption img.instr-thumb {
+            height: 96px;
+            width: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(15,23,42,0.18);
+        }
+        .quad-caption .cap-text { max-width: 34rem; }
+
+        /* ---------- BibTeX ---------- */
+        #citation h2 { text-align: center; }
+        .bibtex-card {
+            position: relative;
+            max-width: 880px;
+            margin: 18px auto 0;
+            background: #0e1218;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+        }
+        .bibtex-card pre {
+            margin: 0;
+            padding: 24px 26px;
+            color: #c4cedb;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .bibtex-copy {
+            position: absolute;
+            top: 12px; right: 12px;
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 14px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(120deg, var(--accent), var(--accent2));
+            color: #ffffff;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: filter 160ms ease;
+            font-family: inherit;
+        }
+        .bibtex-copy:hover { filter: brightness(1.1); }
+        .bibtex-copy.copied { background: #10b981; }
+
+        /* ---------- Footer ---------- */
+        .site-footer { border-top: 1px solid var(--hairline); color: var(--muted); padding: 26px 0; margin-top: 16px; background: var(--surface); }
+        .footer-inner { max-width: 1140px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+        .footer-brand { display: flex; align-items: center; gap: 10px; }
+        .footer-brand img { height: 32px; width: 32px; display: block; background: var(--plate); border-radius: 8px; padding: 3px; box-sizing: border-box; }
+        .footer-brand span { color: var(--text); }
+        .footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
+        .footer-links a { color: var(--muted); text-decoration: none; font-size: 15px; }
+        .footer-links a:hover { color: var(--text); }
+        .footer-copy { text-align: center; color: var(--muted2); margin-top: 18px; font-size: 12.5px; }
+        .footer-copy a { color: var(--muted); }
+
+    </style>
+</head>
+<body>
+    <header class="top-banner">
+        <div class="top-banner-inner">
+            <div class="brand">
+                <img src="figures/logo.png" alt="Mover360 Logo">
+                <span class="title">Mover360</span>
+            </div>
+            <nav class="top-nav">
+                <a href="#gallery">Gallery</a>
+                <a href="#abstract">Abstract</a>
+                <a href="#motivation">Motivation</a>
+                <a href="#approach">Approach</a>
+                <a href="#dataset">Dataset</a>
+                <a href="#results">Comparisons</a>
+                <a href="#citation">BibTeX</a>
+                <a href="#" target="_blank" class="btn-demo">Paper</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero-pattern">
+        <div class="hero-inner hero-content">
+            <div class="text-center">
+                <img class="hero-logo" src="figures/logo.png" alt="Mover360 logo">
+                <h1 class="hero-title" style="font-size: 40px;">
+                    <span class="gradient-text">Mover360</span>: Controllable Object Manipulation in 360&deg; Panoramic Images
+                </h1>
+
+                <p class="hero-sub">
+                    Move, insert, and remove objects in 360&deg; panoramas — natively in the ERP domain.
+                    In the default point mode, a single click relocates an object, and Mover360 infers a
+                    plausible size, support, and illumination from panoramic context.
+                </p>
+
+                <div class="hero-features">
+                    <span class="hero-feature-badge"><i class="fa-regular fa-file-lines"></i> Paper</span>
+                    <span class="hero-feature-badge"><i class="fa-brands fa-github"></i> GitHub</span>
+                    <span class="hero-feature-badge"><i class="fa-solid fa-database"></i> Dataset</span>
+                </div>
+
+                <div class="author-list">
+                    <div class="author-card">
+                        <div class="names">
+                            <span class="au">Haoyi Zhong<sup>1</sup></span>
+                            <span class="au">Fang-Lue Zhang<sup>2,*</sup></span>
+                            <span class="au">Andrew Chalmers<sup>1</sup></span>
+                            <span class="au">Taehyun Rhee<sup>3</sup></span>
+                        </div>
+                        <div class="aff-list">
+                            <div><sup>1</sup>&nbsp;Victoria University of Wellington, New Zealand</div>
+                            <div><sup>2</sup>&nbsp;University of New South Wales, Australia</div>
+                            <div><sup>3</sup>&nbsp;The University of Melbourne, Australia</div>
+                        </div>
+                        <div class="notes">
+                            <span><sup>*</sup>&nbsp;Corresponding author</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="container">
+
+        <section id="gallery">
+            <h2>Editing Gallery</h2>
+            <p class="section-subtitle">Left: input panorama &middot; Right: Mover360 result. Drag or zoom either 360&deg; viewer — the pair stays in sync.
+            Below each pair, the <b>ERP instruction map</b> shows the edit given to the model: source object &rarr; Gaussian target point (with the reference inset for insertion). Click it to view full size.</p>
+
+            <div class="task-tabs" id="taskTabs">
+                <button class="task-tab active" data-task="translation">Translation<span class="count" id="countTranslation"></span></button>
+                <button class="task-tab" data-task="insertion">Insertion<span class="count" id="countInsertion"></span></button>
+                <button class="task-tab" data-task="removal">Removal<span class="count" id="countRemoval"></span></button>
+            </div>
+
+            <div class="editing-panel">
+                <div class="editing-wrap">
+                    <button id="editPrev" class="demo-nav-btn demo-prev" aria-label="Previous">&#10094;</button>
+                    <button id="editNext" class="demo-nav-btn demo-next" aria-label="Next">&#10095;</button>
+                    <div id="editingStrip" class="editing-strip"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="abstract">
+            <div class="section-header">
+                <h2>Abstract</h2>
+                <div class="bar"></div>
+            </div>
+            <div class="abstract-card">
+                <div class="prose">
+                    <p class="mb-6">
+                        We present <span class="font-bold text-primary-600">Mover360</span>, a controllable object
+                        manipulation framework for 360&deg; images. Unlike perspective images, the equirectangular (ERP)
+                        projection of 360&deg; images exhibits horizontal wrap-around, latitude-dependent distortion, and
+                        global scene continuity — making object-level edits difficult for existing perspective editors
+                        to produce and for users to specify.
+                    </p>
+                    <p>
+                        <span class="font-bold text-primary-600">Mover360</span> centers on object
+                        <span class="text-green-600 font-medium">Translation</span> (relocating a specified object within
+                        an existing panorama) while supporting reference-guided
+                        <span class="text-green-600 font-medium">Insert</span> and
+                        <span class="text-green-600 font-medium">Remove</span> as auxiliary tasks. Its interface unifies
+                        <span class="text-green-600 font-medium">point-, bbox-, and mask-guided control</span> by encoding
+                        each task into a fixed prompt and a compact, <span class="text-green-600 font-medium">ERP-aligned
+                        instruction map</span> containing a source region, a target region, and a Gaussian target point.
+                        In the default point mode, <span class="text-green-600 font-medium">a single click relocates an
+                        object</span>, allowing the model to infer a plausible size, support, and illumination using
+                        panoramic context and an auxiliary DA&sup2; depth condition. Structurally, Mover360 is a LoRA
+                        adaptation of the pretrained Flux2-Klein-4B-Base rectified-flow transformer with an unmodified
+                        backbone.
+                    </p>
+                    <p>
+                        To generate paired supervision, we construct a <span class="text-green-600 font-medium">UE5
+                        data-generation pipeline</span> featuring surface-aware object placement, size-dependent motion
+                        paths, multi-camera panoramic rendering, randomized illumination, and multi-view reference
+                        capture. This yields 12,150 sequences — expanded via dynamic pair sampling into 60,750 training
+                        pairs per epoch — alongside a <span class="text-green-600 font-medium">dual test benchmark</span>
+                        of 210 synthetic and 50 real captured editing tuples with ground truth for all three tasks.
+                    </p>
+                    <p>
+                        Across both test domains and two adaptation protocols,
+                        <span class="font-bold text-primary-600">Mover360</span> outperforms strong baselines for
+                        perspective editing, insertion, and inpainting in reconstruction fidelity, semantic consistency,
+                        and distributional quality.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="motivation">
+            <div class="section-header">
+                <h2>Motivation</h2>
+                <div class="bar"></div>
+            </div>
+            <div class="motivation-figure">
+                <div class="motivation-img" style="flex-direction: column; gap: 8px;">
+                    <img src="figures/motivation.jpg" alt="Comparison against GPT-Image-2 under ERP-based and perspective-based regimes" style="height:auto;">
+                    <div style="font-size: 12.5px; color: #64748b; line-height: 1.7; margin-top: 10px;">
+                        A state-of-the-art general-purpose editor (GPT-Image-2) applied directly to the ERP inserts
+                        objects at an implausible scale; applied through a perspective projection pipeline it leaves
+                        boundary discontinuities and misses the shadows and specular highlights that panoramic context
+                        dictates. Mover360 produces globally consistent edits in all cases.
+                    </div>
+                </div>
+                <div class="motivation-text">
+                    <div class="motivation-card">
+                        <h3>The Challenge: Perspective Editors on ERP Panoramas</h3>
+                        <div>
+                            <p>Object-level edits on equirectangular panoramas break perspective-image assumptions:</p>
+                            <ul>
+                                <li>The horizontal axis is periodic — left and right boundaries are adjacent longitudes, so local edits can break global spherical continuity</li>
+                                <li>Latitude-dependent distortion destabilizes object geometry and scale under direct ERP editing</li>
+                                <li>Project-edit-reproject pipelines are bounded by the view frustum: long cast shadows, reflections, and out-of-view lighting are never observed or updated, and re-projection leaves seams</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="motivation-card">
+                        <h3>Our Approach: Native, Translation-Centered ERP Editing</h3>
+                        <div>
+                            <p>Mover360 edits the full panorama natively:</p>
+                            <ul>
+                                <li><b>Translation</b> is the primary task; <b>Remove</b> and <b>Insert</b> — its two halves — are auxiliary tasks in the same model</li>
+                                <li>A three-channel ERP-aligned instruction map (source region, target region, Gaussian target point) unifies point / bbox / mask control — one click suffices</li>
+                                <li>Auxiliary DA&sup2; depth conditioning helps infer plausible object size, support, and layout</li>
+                                <li>LoRA adaptation of the Flux2-Klein-4B rectified-flow transformer, with circular padding for left-right continuity</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="section-subtitle" style="margin-bottom: 14px;">Explore the three teaser examples interactively — drag any 360&deg; viewer and the other two follow.</p>
+            <div class="quad-wrap">
+                <button id="motivPrev" class="demo-nav-btn demo-prev" aria-label="Previous">&#10094;</button>
+                <button id="motivNext" class="demo-nav-btn demo-next" aria-label="Next">&#10095;</button>
+                <div id="motivStrip" class="quad-strip"></div>
+            </div>
+        </section>
+
+        <section id="approach">
+            <div class="section-header">
+                <h2>Approach</h2>
+                <div class="bar"></div>
+            </div>
+            <div class="approach-card">
+                <div class="approach-figure">
+                    <img src="figures/pipeline.jpg" alt="Overview of the Mover360 framework" style="width: 80%; margin: 0 auto;">
+                </div>
+                <div class="approach-prose">
+                    <p><span style="color: #1291d8; font-weight: 600;">Overview.</span> Mover360 is built on
+                    Flux2-Klein-4B-Base, a pretrained rectified-flow diffusion transformer, and operates in the latent
+                    space of its VAE. The input ERP panorama, the three-channel instruction map, a normalized DA&sup2;
+                    depth map, and (for insertion only) a reference image are VAE-encoded, concatenated, and patchified
+                    into condition tokens. The native Flux2 4D RoPE coordinates are re-assigned so the transformer can
+                    distinguish text tokens, noisy target-panorama tokens, and each conditioning image slot, and the
+                    transformer predicts the flow-matching velocity of the target latent. VAE encoding and decoding are
+                    wrapped with horizontal circular padding to respect ERP periodicity. A single backbone serves all
+                    three tasks — the reference branch is simply disabled for Translation and Remove.</p>
+                    <p><span style="color: #1291d8; font-weight: 600;">Training.</span> The backbone is adapted with
+                    LoRA (rank 32, &approx;37M trainable parameters) using a pure flow-matching objective — no auxiliary
+                    depth, seam, or perceptual losses. Training runs at 1024&times;512 on 60,750 dynamically sampled
+                    pairs per epoch for 8 epochs (&approx;30K iterations, &approx;20 hours on 8 GPUs), sampling all
+                    instruction granularities so that one set of weights serves point, bbox, and mask guidance at
+                    inference. Generating one panorama takes about 20 seconds with 50 sampling steps.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="dataset">
+            <div class="section-header">
+                <h2>Dataset &amp; Benchmark</h2>
+                <div class="bar"></div>
+            </div>
+            <div class="approach-card">
+                <div class="approach-figure">
+                    <img src="figures/dataset_samples.jpg" alt="Anatomy of one Mover360 editing tuple from the UE5 and real test sets">
+                </div>
+                <p style="font-size: 13.5px; color: #64748b; margin: 2px 0 18px; text-align: center; line-height: 1.7;">
+                    One editing tuple from the UE5 test set (top) and the real captured test set (bottom): a source
+                    panorama, a target panorama, an object-absent background, and a perspective reference — supervising
+                    all three tasks. The left column overlays the three guidance granularities: fine masks (contours),
+                    bbox regions (rectangles), and the Gaussian target point (blue dot), source in red, target in green.
+                </p>
+                <div class="approach-prose">
+                    <p>Paired supervision for object-level panorama editing barely exists in the wild — the same scene
+                    must be observed before and after a controlled edit. We therefore build a
+                    <span style="color: #1291d8; font-weight: 500;">UE5 data-generation pipeline</span>: objects are
+                    attached to floors, walls, ceilings, and slanted surfaces via surface raycasting, moved along 60
+                    object-size-dependent paths, observed by three panoramic cameras per path, and rendered under
+                    randomized global and local illumination, with eight perspective reference views per object. The
+                    corpus contains <b>12,150</b> camera–object sequences over five scenes and 608 unique objects,
+                    expanded by dynamic pair sampling into <b>60,750</b> training pairs per epoch (36,450 Translation /
+                    12,150 Remove / 12,150 Insert).</p>
+                    <p>For evaluation, a <span style="color: #1291d8; font-weight: 500;">dual-domain benchmark</span>
+                    provides <b>210</b> held-out synthetic tuples and <b>50</b> real captured tuples, each with ground
+                    truth for all three tasks — enabling paired quantitative evaluation on real panoramas rather than
+                    reference-free scoring. The real set deliberately stresses long-range rearrangements: the median
+                    great-circle displacement is 50.9&deg;, and a quarter of the moves exceed 103&deg;.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="results">
+            <div class="section-header">
+                <h2>Comparison with State-of-the-Art</h2>
+                <div class="bar"></div>
+            </div>
+            <div class="results-figure">
+                <img src="figures/compare_translation.jpg" alt="Qualitative comparison for the Translation task">
+                <p class="fig-caption">
+                    <b>Translation.</b> Baselines often leave residual content at the source location, distort the moved
+                    object, or produce less plausible contact with the target surface. Mover360 uses the point or region
+                    instruction to move the object while preserving the surrounding panorama.
+                </p>
+            </div>
+            <div class="results-figure" style="margin-top: 16px;">
+                <img src="figures/compare_insertion.jpg" alt="Qualitative comparison for the Insert task">
+                <p class="fig-caption">
+                    <b>Insert.</b> Reference-guided baselines may copy viewpoint-specific appearance or produce
+                    inconsistent object scale. Mover360 better adapts the inserted object to the target region and the
+                    panorama context.
+                </p>
+            </div>
+            <div class="results-figure" style="margin-top: 16px;">
+                <img src="figures/compare_removal.jpg" alt="Qualitative comparison for the Remove task">
+                <p class="fig-caption">
+                    <b>Remove.</b> LaMa is a strong specialized inpainting baseline, but Mover360 performs removal
+                    within the same unified framework used for translation and insertion.
+                </p>
+            </div>
+            <p class="section-subtitle">Interactive comparison on each task — drag any viewer and the other three follow.</p>
+            <div class="mt-3">
+                <div class="quad-wrap">
+                    <button id="quadPrev" class="demo-nav-btn demo-prev" aria-label="Previous">&#10094;</button>
+                    <button id="quadNext" class="demo-nav-btn demo-next" aria-label="Next">&#10095;</button>
+                    <div id="quadStrip" class="quad-strip"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="applications">
+            <div class="section-header">
+                <h2>Applications</h2>
+                <div class="bar"></div>
+            </div>
+            <div class="applications-card">
+                <div class="prose">
+                    <p>
+                        360&deg; panoramas are widely used in virtual reality, immersive telepresence, indoor scene
+                        capture, virtual staging, and environment lighting. In these applications, users need
+                        object-level manipulation rather than global image generation: moving a piece of furniture to a
+                        new location, removing an unwanted object, or inserting a reference object into an existing
+                        scene.
+                    </p>
+                    <p>
+                        Mover360 supports exactly this workflow — <b>virtual staging and indoor design</b> (relocate
+                        furniture with a single click, remove clutter, insert catalog objects with plausible support,
+                        occlusion, and illumination), and <b>VR content revision</b> (edit captured 360&deg;
+                        environments without re-shooting the scene), while preserving the surrounding panorama and its
+                        left-right continuity.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="citation">
+            <div class="section-header">
+                <h2>BibTeX</h2>
+                <div class="bar"></div>
+            </div>
+            <p style="text-align: center; margin: 0;"><span class="placeholder-note">Placeholder — to be updated upon submission / acceptance</span></p>
+            <div class="bibtex-card">
+                <button class="bibtex-copy" id="bibtexCopy" type="button"><i class="fa-regular fa-copy"></i> Copy</button>
+                <pre id="bibtexText">@article{placeholder2026mover360,
+  title   = {Mover360: Controllable Object Manipulation in 360$^\circ$ Panoramic Images},
+  author  = {[Author list — placeholder]},
+  journal = {[Venue — placeholder, not yet submitted]},
+  year    = {2026}
+}</pre>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <img src="figures/logo.png" alt="Mover360 Logo">
+                <span style="font-weight:600;">Mover360</span>
+            </div>
+            <div class="footer-links">
+                <a href="#gallery">Gallery</a>
+                <a href="#abstract">Abstract</a>
+                <a href="#motivation">Motivation</a>
+                <a href="#approach">Approach</a>
+                <a href="#dataset">Dataset</a>
+                <a href="#results">Comparisons</a>
+            </div>
+        </div>
+        <div class="footer-copy">&copy; 2026 Mover360 Team. All rights reserved. &middot; Page template adapted from the
+            <a href="https://world-shaper-project.github.io/" style="color:#9ca3af;">World-Shaper</a> project page &middot;
+            360&deg; viewer: <a href="https://pannellum.org/" style="color:#9ca3af;">Pannellum</a></div>
+    </footer>
+
+    <script src="pannellum/pannellum.js"></script>
+    <script src="sync-viewers.js"></script>
+    <script>
+        /* =====================================================================
+           EDIT ME — gallery data.
+           Each entry: { input: 'path', ours: 'path', prompt: 'instruction text' }
+           To publish the Insertion / Removal galleries later, drop the images
+           into figures/insertion/ and figures/removal/ (e.g. image1_input.jpg +
+           image1_ours.jpg) and list them below — the "Coming soon" card
+           disappears automatically as soon as a list is non-empty.
+           ===================================================================== */
+        const galleryData = {
+            translation: Array.from({ length: 14 }, (_, i) => ({
+                input: `figures/translation/image${i + 1}_input.jpg`,
+                ours: `figures/translation/image${i + 1}_ours.jpg`,
+                instruction: `figures/translation/image${i + 1}_instr.jpg`,   // ERP instruction map overlay
+                prompt: ''   // optional per-example note (task-level default caption is shown otherwise)
+            })),
+            insertion: Array.from({ length: 8 }, (_, i) => ({
+                input: `figures/insertion/image${i + 1}_input.jpg`,
+                ours: `figures/insertion/image${i + 1}_ours.jpg`,
+                reference: `figures/insertion/image${i + 1}_ref.jpg`,   // reference object thumbnail
+                instruction: `figures/insertion/image${i + 1}_instr.jpg`,   // ERP instruction map overlay
+                prompt: ''   // optional per-example note (task-level default caption is shown otherwise)
+            })),
+            removal: Array.from({ length: 8 }, (_, i) => ({
+                input: `figures/removal/image${i + 1}_input.jpg`,
+                ours: `figures/removal/image${i + 1}_ours.jpg`,
+                instruction: `figures/removal/image${i + 1}_instr.jpg`,   // ERP instruction map overlay
+                prompt: ''   // optional per-example note (task-level default caption is shown otherwise)
+            }))
+        };
+
+        const taskNames = { translation: 'Object Translation', insertion: 'Object Insertion', removal: 'Object Removal' };
+        const taskColors = { translation: '#1291d8', insertion: '#7856ff', removal: '#0fb5a0' };
+
+        /* Default caption per task, used when an entry has no per-example prompt. */
+        const defaultCaptions = {
+            translation: 'Point-guided translation — a single click relocates the object; size, support, and illumination are inferred from panoramic context.',
+            insertion: 'Reference-guided insertion — the reference object is placed at the target location, adapted to panoramic geometry and lighting.',
+            removal: 'Object removal — the selected object is removed and the background is completed consistently with the surrounding sphere.'
+        };
+
+        /* =====================================================================
+           EDIT ME — comparison data (one page per task).
+           ===================================================================== */
+        const comparisonGroups = [
+            {
+                task: 'Object Translation',
+                labels: ['Input', 'Paint-by-Example', 'OmniPaint', 'Mover360 (Ours)'],
+                items: [
+                    'figures/comparison/translation_input.jpg',
+                    'figures/comparison/translation_paint-by-example.jpg',
+                    'figures/comparison/translation_omnipaint.jpg',
+                    'figures/comparison/translation_ours.jpg'
+                ],
+                prompt: 'Move the selected object to the target location. Baselines receive the known-size target bbox or mask; Mover360 needs only its instruction map.',
+                reference: null,
+                instruction: 'figures/comparison/translation_instr.jpg'
+            },
+            {
+                task: 'Object Insertion',
+                labels: ['Input', 'AnyDoor', 'OmniPaint', 'Mover360 (Ours)'],
+                items: [
+                    'figures/comparison/insertion_input.jpg',
+                    'figures/comparison/insertion_anydoor.jpg',
+                    'figures/comparison/insertion_omnipaint.jpg',
+                    'figures/comparison/insertion_ours.jpg'
+                ],
+                prompt: 'Insert the reference object (left) at the target region, adapting its appearance to panoramic geometry and lighting.',
+                reference: 'figures/comparison/insertion_reference.jpg',
+                instruction: 'figures/comparison/insertion_instr.jpg'
+            },
+            {
+                task: 'Object Removal',
+                labels: ['Input', 'LaMa', 'OmniPaint', 'Mover360 (Ours)'],
+                items: [
+                    'figures/comparison/removal_input.jpg',
+                    'figures/comparison/removal_lama.jpg',
+                    'figures/comparison/removal_omnipaint.jpg',
+                    'figures/comparison/removal_ours.jpg'
+                ],
+                prompt: 'Remove the selected object and complete the background consistently with the surrounding sphere.',
+                reference: null,
+                instruction: 'figures/comparison/removal_instr.jpg'
+            }
+        ];
+
+        /* =====================================================================
+           Editing gallery: tabbed strip of synced viewer pairs (lazy-loaded).
+           ===================================================================== */
+        const editingStrip = document.getElementById('editingStrip');
+        const editPrevBtn = document.getElementById('editPrev');
+        const editNextBtn = document.getElementById('editNext');
+
+        let editingRecords = [];
+        let editingObserver = null;
+        let currentTask = 'translation';
+        let editResizeTimer = null;
+
+        function sizePairViewers(card, pair) {
+            const viewers = card.querySelectorAll('.sv-viewer');
+            viewers.forEach(vEl => {
+                const w = vEl.getBoundingClientRect().width;
+                if (w > 0) vEl.style.height = w + 'px';
+            });
+            try { pair && pair.left && pair.left.resize(); } catch (e) {}
+            try { pair && pair.right && pair.right.resize(); } catch (e) {}
+        }
+
+        function resizeEditingViewersSoon() {
+            if (editResizeTimer) window.clearTimeout(editResizeTimer);
+            editResizeTimer = window.setTimeout(() => {
+                editingRecords.forEach(rec => { if (rec.pair) sizePairViewers(rec.card, rec.pair); });
+            }, 250);
+        }
+
+        function ensureEditingPair(rec) {
+            if (rec.pair) return;
+            const promptText = rec.entry.prompt && rec.entry.prompt.trim()
+                ? rec.entry.prompt
+                : (defaultCaptions[rec.task] || '');
+            rec.pair = createSyncedViewerPair(rec.card, {
+                left: { panorama: rec.entry.input, pannellum: { hfov: 120, minHfov: 50, maxHfov: 120 } },
+                right: { panorama: rec.entry.ours, pannellum: { hfov: 120, minHfov: 50, maxHfov: 120 } },
+                labels: ['Input', 'Mover360 (Ours)'],
+                size: { width: 'fluid', height: 280 },
+                meta: {
+                    title: taskNames[rec.task] + ' · Example ' + (rec.index + 1),
+                    description: promptText,
+                    reference: rec.entry.reference || null,
+                    instruction: rec.entry.instruction || null,
+                    accent: taskColors[rec.task] || null
+                }
+            });
+            sizePairViewers(rec.card, rec.pair);
+        }
+
+        function destroyEditingPair(rec) {
+            if (!rec.pair) return;
+            try { rec.pair.destroy(); } catch (e) {}
+            rec.pair = null;
+            rec.card.innerHTML = '';
+        }
+
+        function setupEditingObserver() {
+            if (editingObserver) { editingObserver.disconnect(); editingObserver = null; }
+            if (!('IntersectionObserver' in window)) {
+                editingRecords.forEach(rec => ensureEditingPair(rec));
+                return;
+            }
+            editingObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const rec = editingRecords.find(r => r.card === entry.target);
+                    if (!rec) return;
+                    if (entry.isIntersecting && entry.intersectionRatio > 0.1) {
+                        ensureEditingPair(rec);
+                    } else {
+                        destroyEditingPair(rec);
+                    }
+                });
+            }, { root: null, threshold: [0.1, 0.25] });
+            editingRecords.forEach(rec => editingObserver.observe(rec.card));
+        }
+
+        function buildEditingStrip(task) {
+            if (editingObserver) { editingObserver.disconnect(); editingObserver = null; }
+            editingRecords.forEach(destroyEditingPair);
+            editingRecords = [];
+            editingStrip.innerHTML = '';
+            editingStrip.scrollLeft = 0;
+
+            const entries = galleryData[task] || [];
+            if (entries.length === 0) {
+                const cs = document.createElement('div');
+                cs.className = 'coming-soon-card';
+                cs.innerHTML = '<div class="icon">🚧</div>' +
+                    '<div class="cs-title">' + taskNames[task] + ' gallery — coming soon</div>' +
+                    '<div class="cs-sub">Results for this task are being prepared and will be uploaded shortly. ' +
+                    'In the meantime, check the ' + taskNames[task] + ' example in the comparison section below.</div>';
+                editingStrip.appendChild(cs);
+                editPrevBtn.style.display = 'none';
+                editNextBtn.style.display = 'none';
+                return;
+            }
+
+            editPrevBtn.style.display = 'flex';
+            editNextBtn.style.display = 'flex';
+            entries.forEach((entry, index) => {
+                const card = document.createElement('div');
+                card.className = 'editing-item';
+                editingStrip.appendChild(card);
+                editingRecords.push({ card, entry, index, task, pair: null });
+            });
+            setupEditingObserver();
+        }
+
+        function editScrollAmount() {
+            const first = editingStrip.querySelector('.editing-item');
+            if (!first) return 0;
+            const w = first.getBoundingClientRect().width + 12;
+            const visible = Math.floor(editingStrip.getBoundingClientRect().width / w) || 1;
+            return w * visible;
+        }
+
+        editPrevBtn.addEventListener('click', () => {
+            editingStrip.scrollTo({ left: Math.max(0, editingStrip.scrollLeft - editScrollAmount()), behavior: 'smooth' });
+            resizeEditingViewersSoon();
+        });
+        editNextBtn.addEventListener('click', () => {
+            const maxScroll = editingStrip.scrollWidth - editingStrip.clientWidth;
+            editingStrip.scrollTo({ left: Math.min(maxScroll, editingStrip.scrollLeft + editScrollAmount()), behavior: 'smooth' });
+            resizeEditingViewersSoon();
+        });
+        editingStrip.addEventListener('scroll', resizeEditingViewersSoon);
+        window.addEventListener('resize', resizeEditingViewersSoon);
+
+        /* Tabs */
+        const tabButtons = document.querySelectorAll('.task-tab');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const task = btn.dataset.task;
+                if (task === currentTask) return;
+                currentTask = task;
+                tabButtons.forEach(b => b.classList.toggle('active', b === btn));
+                buildEditingStrip(task);
+            });
+        });
+
+        function updateTabCounts() {
+            const set = (id, list) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = list.length > 0 ? '· ' + list.length : '· soon';
+            };
+            set('countTranslation', galleryData.translation);
+            set('countInsertion', galleryData.insertion);
+            set('countRemoval', galleryData.removal);
+        }
+
+        updateTabCounts();
+        buildEditingStrip(currentTask);
+
+        /* =====================================================================
+           Paginated comparison strips (lazy-loaded synced viewers) — used by
+           both the Motivation teaser examples and the SOTA comparison.
+           ===================================================================== */
+        function initComparisonStrip(cfg) {
+            const strip = document.getElementById(cfg.stripId);
+            const prevBtn = document.getElementById(cfg.prevId);
+            const nextBtn = document.getElementById(cfg.nextId);
+            if (!strip || !prevBtn || !nextBtn) return;
+            const records = [];
+
+            cfg.groups.forEach((group) => {
+                const page = document.createElement('div');
+                page.className = 'quad-item';
+                const host = document.createElement('div');
+                host.className = 'quad-viewer-host';
+                page.appendChild(host);
+
+                const caption = document.createElement('div');
+                caption.className = 'quad-caption';
+                let extraHtml = '';
+                if (group.instruction) {
+                    extraHtml += '<a class="instr-box" href="' + group.instruction + '" target="_blank" rel="noopener" ' +
+                        'title="Open the full-size instruction map"><img class="instr-thumb" src="' + group.instruction +
+                        '" alt="ERP instruction map"><span>ERP Instruction</span></a>';
+                }
+                if (group.reference) {
+                    extraHtml += '<span class="ref-box"><img class="ref-thumb" src="' + group.reference +
+                        '" alt="Reference object"><span>Reference</span></span>';
+                }
+                caption.innerHTML = extraHtml + '<span class="cap-text"><strong style="color:' + (group.color || '#0f172a') +
+                    '">' + group.task + '.</strong> ' + group.prompt + '</span>';
+                page.appendChild(caption);
+
+                strip.appendChild(page);
+                records.push({ page, host, group, instance: null });
+            });
+
+            function load(rec) {
+                if (rec.instance) return;
+                rec.host.innerHTML = '';
+                rec.instance = createComparisonQuad(rec.host, {
+                    title: '',
+                    labels: rec.group.labels,
+                    items: rec.group.items,
+                    size: { width: 'fluid', height: cfg.height || 220 },
+                    pannellum: { autoRotate: -5, hfov: 120, minHfov: 50, maxHfov: 120 }
+                });
+            }
+            function destroy(rec) {
+                if (rec.instance && typeof rec.instance.destroy === 'function') {
+                    try { rec.instance.destroy(); } catch (e) {}
+                }
+                rec.instance = null;
+                rec.host.innerHTML = '';
+            }
+
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const rec = records.find(r => r.page === entry.target);
+                        if (!rec) return;
+                        if (entry.isIntersecting && entry.intersectionRatio > 0.05) load(rec); else destroy(rec);
+                    });
+                }, { root: strip, threshold: [0.05, 0.2] });
+                records.forEach(rec => observer.observe(rec.page));
+            } else {
+                records.forEach(load);
+            }
+
+            let index = 0;
+            const total = cfg.groups.length;
+            function scrollToPage(i) { strip.scrollTo({ left: i * (strip.clientWidth || 1), behavior: 'smooth' }); }
+            function updateNav() {
+                prevBtn.disabled = index <= 0;
+                nextBtn.disabled = index >= total - 1;
+                prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '0.95';
+                nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '0.95';
+                if (total <= 1) { prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; }
+            }
+            prevBtn.addEventListener('click', () => { if (index > 0) { index--; scrollToPage(index); updateNav(); } });
+            nextBtn.addEventListener('click', () => { if (index < total - 1) { index++; scrollToPage(index); updateNav(); } });
+            let scrollTimer;
+            strip.addEventListener('scroll', () => {
+                window.clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(() => {
+                    index = Math.round(strip.scrollLeft / (strip.clientWidth || 1));
+                    updateNav();
+                }, 100);
+            });
+            window.addEventListener('resize', () => { strip.scrollLeft = index * (strip.clientWidth || 1); });
+            updateNav();
+        }
+
+        /* SOTA comparison: one page per task */
+        initComparisonStrip({
+            stripId: 'quadStrip', prevId: 'quadPrev', nextId: 'quadNext', height: 220,
+            groups: comparisonGroups.map(g => Object.assign({}, g, {
+                color: ({ 'Object Translation': '#1291d8', 'Object Insertion': '#7856ff', 'Object Removal': '#0fb5a0' })[g.task]
+            }))
+        });
+
+        /* =====================================================================
+           EDIT ME — Motivation teaser examples vs GPT-Image-2 (3-up viewers).
+           ===================================================================== */
+        const motivationGroups = [
+            {
+                task: 'Insert (ERP-based)',
+                color: '#7856ff',
+                labels: ['Input', 'GPT-Image-2', 'Mover360 (Ours)'],
+                items: ['figures/motivation/ex1_input.jpg', 'figures/motivation/ex1_gpt.jpg', 'figures/motivation/ex1_ours.jpg'],
+                reference: 'figures/motivation/ex1_ref.jpg',
+                prompt: '\u201cPlace the ceramic piece at the bottom of the image.\u201d Applied directly to the ERP, GPT-Image-2 inserts the vase at an implausible scale; Mover360 matches the scene geometry.'
+            },
+            {
+                task: 'Translation (perspective-based)',
+                color: '#1291d8',
+                labels: ['Input', 'GPT-Image-2', 'Mover360 (Ours)'],
+                items: ['figures/motivation/ex2_input.jpg', 'figures/motivation/ex2_gpt.jpg', 'figures/motivation/ex2_ours.jpg'],
+                prompt: '\u201cPlace the black car next to the window.\u201d The project\u2013edit\u2013reproject pipeline leaves a visible boundary discontinuity, and the relocated car lacks the lamp-induced highlights and cast shadows that Mover360 reproduces.'
+            },
+            {
+                task: 'Remove (perspective-based)',
+                color: '#0fb5a0',
+                labels: ['Input', 'GPT-Image-2', 'Mover360 (Ours)'],
+                items: ['figures/motivation/ex3_input.jpg', 'figures/motivation/ex3_gpt.jpg', 'figures/motivation/ex3_ours.jpg'],
+                prompt: '\u201cRemove the sofa.\u201d Content outside the perspective view survives re-projection and unrelated regions drift; Mover360 removes the object with globally consistent illumination.'
+            }
+        ];
+        initComparisonStrip({ stripId: 'motivStrip', prevId: 'motivPrev', nextId: 'motivNext', groups: motivationGroups, height: 250 });
+
+        /* =====================================================================
+           BibTeX copy button.
+           ===================================================================== */
+        (function () {
+            const btn = document.getElementById('bibtexCopy');
+            const pre = document.getElementById('bibtexText');
+            if (!btn || !pre) return;
+            btn.addEventListener('click', function () {
+                const text = pre.innerText;
+                const done = function () {
+                    btn.classList.add('copied');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+                    setTimeout(function () {
+                        btn.classList.remove('copied');
+                        btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                    }, 1800);
+                };
+                const fallbackCopy = function (t) {
+                    const ta = document.createElement('textarea');
+                    ta.value = t;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand('copy'); } catch (e) {}
+                    document.body.removeChild(ta);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text); done(); });
+                } else {
+                    fallbackCopy(text); done();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
