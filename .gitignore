@@ -13,3 +13,8 @@ wandb/
 # Checkpoints: keep only the small FAED evaluation weights in the repo
 checkpoints/*
 !checkpoints/faed.ckpt
+
+# Personal machine-specific launchers (never published)
+interactive_local.py
+*_local.sh
+
