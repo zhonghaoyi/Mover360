@@ -4,7 +4,7 @@
 
 Mover360 performs controllable object manipulation natively on equirectangular (ERP) 360° panoramas — point-, bbox-, and mask-guided object **translation**, **insertion**, and **removal**. It centers on object Translation (relocating a specified object with a single click), with Insert and Remove supported as auxiliary tasks in the same model: a LoRA adaptation of Flux2-Klein-4B-Base conditioned on a three-channel ERP-aligned instruction map and an auxiliary DA² depth map.
 
-Paper and dataset links will be added upon release.
+**Test benchmark:** [HaoyiZhong/Mover360-benchmark](https://huggingface.co/datasets/HaoyiZhong/Mover360-benchmark) · Paper link will be added upon release.
 
 ## Environment
 
@@ -28,6 +28,14 @@ Set `WANDB_MODE=offline` to run without a Weights & Biases account.
 ## Data
 
 Training and evaluation expect the UE5 data root at `data/UE5_data` by default; every script accepts a custom path (see `dataset/Mover360_Base.py` for the layout).
+
+The dual test benchmark is available at [HaoyiZhong/Mover360-benchmark](https://huggingface.co/datasets/HaoyiZhong/Mover360-benchmark): `Test_all_new.zip` (210 held-out UE5 synthetic editing tuples) and `Test_real_all.zip` (50 real captured editing tuples). Unzip them under `data/UE5_data/`, e.g.:
+
+```bash
+hf download HaoyiZhong/Mover360-benchmark --repo-type dataset --local-dir data/benchmark
+unzip data/benchmark/Test_all_new.zip -d data/UE5_data/
+unzip data/benchmark/Test_real_all.zip -d data/UE5_data/
+```
 
 ## Training
 
