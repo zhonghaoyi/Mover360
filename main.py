@@ -177,7 +177,7 @@ def cli_main():
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
             'strategy': 'ddp' if torch.cuda.device_count() > 1 else 'auto',
-            'devices': [0,1],
+            'devices': 'auto',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
