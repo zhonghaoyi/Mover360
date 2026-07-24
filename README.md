@@ -22,7 +22,8 @@ Set `WANDB_MODE=offline` to run without a Weights & Biases account.
 ## Checkpoints
 
 - `checkpoints/faed.ckpt` — panorama autoencoder used by the FAED evaluation metric (included in this repo).
-- Place the trained Mover360 checkpoint anywhere and pass its path to `predict.sh`.
+- The trained Mover360 checkpoint will be released separately; place it anywhere and pass its path via `--ckpt` (used by `predict.sh` and `interactive.py`).
+- The Flux2-Klein-4B base model and the DA² depth model are downloaded automatically from the Hugging Face Hub on first run; run `huggingface-cli login` first if the base model requires accepting its license.
 
 ## Data
 
@@ -55,9 +56,9 @@ Reports FAED, PSNR, SSIM, LPIPS, DINOv3 similarity, and FID.
 ## Interactive demo
 
 ```bash
-python interactive.py --help
+python interactive.py --ckpt /path/to/mover360.ckpt --port 7860
 ```
 
-Launches a browser-based editor for point-, bbox-, and mask-guided panorama editing.
+Launches a browser-based editor for point-, bbox-, and mask-guided panorama editing (results are written to `logs/interactive/`). Requires a CUDA GPU (roughly 24 GB of memory; on GPUs without bf16 support the demo falls back to fp16 automatically). Set `MOVER360_HF_CACHE` or pass `--huggingface-cache` to use a non-default Hugging Face cache location. See `python interactive.py --help` for all options.
 
 <sub>Site template adapted from the [World-Shaper](https://world-shaper-project.github.io/) project page · 360° viewer: [Pannellum](https://pannellum.org/) (MIT)</sub>

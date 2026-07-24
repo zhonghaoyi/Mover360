@@ -18,8 +18,12 @@ import argparse
 import datetime
 import os
 
-# /tmp/gradio on this shared machine belongs to another user; keep temp files local.
-os.environ.setdefault("GRADIO_TEMP_DIR", "/vol/graphics-solar/zhonghaoy/.gradio_tmp")
+# On shared machines /tmp/gradio may belong to another user; keep temp files
+# inside the repo unless the caller already set GRADIO_TEMP_DIR.
+os.environ.setdefault(
+    "GRADIO_TEMP_DIR",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gradio_tmp"),
+)
 
 import cv2
 import gradio as gr

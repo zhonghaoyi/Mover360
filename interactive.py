@@ -38,7 +38,9 @@ REPO_ROOT = Path(__file__).resolve().parent
 DA2_DIR = REPO_ROOT / "depth" / "DA-2"
 DEFAULT_CKPT = REPO_ROOT / "logs" / "360mover_flux2_depth" / "checkpoints" / "epoch=7-step=30219.ckpt"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "logs" / "interactive"
-DEFAULT_HF_CACHE = Path("/vol/graphics-solar/zhonghaoy/huggingface/hub")
+# Optional override for the Hugging Face cache; unset -> standard HF cache.
+_hf_cache_env = os.environ.get("MOVER360_HF_CACHE")
+DEFAULT_HF_CACHE = Path(_hf_cache_env) if _hf_cache_env else None
 MAX_INTERACTIVE_RESULTS = 8
 DEFAULT_AUTO_GPU_MAX_USED_MB = 128
 DEFAULT_AUTO_GPU_MAX_UTIL = 20
@@ -1728,7 +1730,7 @@ class InteractiveRunner:
                 inference_timesteps=int(self.args.timesteps),
                 guidance_scale=float(self.args.guidance_scale),
                 compile_models=bool(self.args.compile_models),
-                huggingface_cache=str(self.args.huggingface_cache),
+                huggingface_cache=str(self.args.huggingface_cache) if self.args.huggingface_cache else None,
                 use_mask_in_inference=True,
                 use_ref_in_inference=True,
             )
@@ -2428,10 +2430,11 @@ def main() -> None:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_visible_devices)
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     os.environ.setdefault("WANDB_MODE", "disabled")
-    os.environ.setdefault("HF_HOME", str(Path(args.huggingface_cache).parent))
-    os.environ.setdefault("HF_HUB_CACHE", str(args.huggingface_cache))
-    os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(args.huggingface_cache))
-    os.environ.setdefault("TRANSFORMERS_CACHE", str(args.huggingface_cache))
+    if args.huggingface_cache:
+        os.environ.setdefault("HF_HOME", str(Path(args.huggingface_cache).parent))
+        os.environ.setdefault("HF_HUB_CACHE", str(args.huggingface_cache))
+        os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(args.huggingface_cache))
+        os.environ.setdefault("TRANSFORMERS_CACHE", str(args.huggingface_cache))
     os.environ.setdefault("TORCH_HOME", str(REPO_ROOT / ".cache" / "torch"))
     os.environ.setdefault("XDG_CACHE_HOME", str(REPO_ROOT / ".cache"))
     os.environ.setdefault("MPLCONFIGDIR", str(REPO_ROOT / ".cache" / "matplotlib"))
