@@ -37,6 +37,18 @@ unzip data/benchmark/Test_all_new.zip -d data/UE5_data/
 unzip data/benchmark/Test_real_all.zip -d data/UE5_data/
 ```
 
+### Depth conditioning maps
+
+Mover360 conditions on DA² depth maps stored as a `MovieRenders_PredictDepth`
+directory next to `MovieRenders_Normal` inside each data folder. If a data
+folder does not contain them yet, precompute them once (the DA² weights are
+downloaded automatically from the Hugging Face Hub):
+
+```bash
+python depth/DA-2/infer_npy_batch.py --input_root data/UE5_data/Test_all_new/Saved
+python depth/DA-2/infer_npy_batch.py --input_root data/UE5_data/Test_real_all/Saved
+```
+
 ## Training
 
 ```bash
