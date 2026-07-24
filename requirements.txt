@@ -1,0 +1,58 @@
+# Mover360 environment for CUDA 12.6 (stable PyTorch wheels).
+# Package versions exported from the `mover360` conda environment (Python 3.10).
+#
+# The reference environment was built with torch 2.5.1+cu121; PyTorch publishes
+# no cu126 wheels for 2.5.1, so the torch stack below is pinned to the nearest
+# stable release with CUDA 12.6 builds (torch 2.6.0 / torchvision 0.21.0 /
+# torchaudio 2.6.0). For CUDA 12.8 / Blackwell GPUs use requirements_cuda128.txt.
+#
+# Typical install:
+#   python -m pip install -U pip setuptools wheel
+#   python -m pip install -r requirements.txt
+#
+# Notes:
+# - Do not manually pin nvidia-* or triton here; torch resolves the matching
+#   CUDA runtime wheels itself.
+# - diffusers is installed from a pinned git commit for Flux2 support.
+
+--index-url https://download.pytorch.org/whl/cu126
+--extra-index-url https://pypi.org/simple
+
+torch==2.6.0
+torchvision==0.21.0
+torchaudio==2.6.0
+
+git+https://github.com/huggingface/diffusers.git@4a2833c1c226362677e165a363fecb4da331e122
+accelerate==1.12.0
+bitsandbytes==0.49.2
+einops==0.8.1
+filelock==3.25.0
+huggingface_hub==1.5.0
+hydra-core==1.3.2
+jsonargparse[signatures]==4.46.0
+kornia==0.8.0
+lightning==2.6.1
+matplotlib==3.10.8
+numpy==2.2.6
+omegaconf==2.3.0
+opencv-python==4.11.0.86
+packaging
+peft==0.18.1
+pillow==11.3.0
+pydantic==2.11.10
+pytorch-lightning==2.6.1
+PyYAML==6.0.3
+regex==2026.2.28
+requests==2.32.5
+safetensors==0.7.0
+scikit-image==0.25.2
+scipy==1.13.1
+sentencepiece==0.2.0
+supervision==0.27.0.post1
+tensorboardX==2.6.4
+tokenizers==0.22.2
+torch_fidelity==0.4.0
+torchmetrics==1.3.2
+tqdm==4.67.3
+transformers==5.2.0
+wandb==0.19.10

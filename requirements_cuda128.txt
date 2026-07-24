@@ -1,0 +1,60 @@
+# 360mover environment for CUDA 12.8 / NVIDIA Blackwell (sm_120)
+# Recommended for a fresh Python 3.12 environment on this machine.
+#
+# Why nightly torch?
+# - Stable torch 2.7.0+cu128 pulls nvidia-nccl-cu12==2.26.2
+# - That stack reproduced multi-GPU NCCL illegal memory access on RTX PRO 6000 Blackwell
+# - Use the PyTorch nightly cu128 wheels and let torch resolve the matching CUDA/NCCL/Triton runtime
+#
+# Typical install:
+#   python -m pip install -U pip setuptools wheel
+#   python -m pip install -r requirements_cuda128.txt
+#
+# Notes:
+# - Do not manually pin nvidia-nccl-cu12 here.
+# - Do not manually pin triton here.
+# - diffusers is installed from a pinned git commit for Flux2 support.
+
+--pre
+--index-url https://download.pytorch.org/whl/nightly/cu128
+--extra-index-url https://pypi.org/simple
+
+torch
+torchvision
+torchaudio
+
+git+https://github.com/huggingface/diffusers.git@4a2833c1c226362677e165a363fecb4da331e122
+accelerate==1.12.0
+bitsandbytes==0.49.2
+einops==0.8.1
+filelock==3.25.0
+huggingface_hub==1.5.0
+hydra-core==1.3.2
+jsonargparse[signatures]==4.47.0
+kornia==0.8.0
+lightning==2.6.1
+matplotlib==3.10.8
+numpy==2.2.6
+omegaconf==2.3.0
+opencv-python==4.11.0.86
+packaging
+peft==0.18.1
+pillow==12.1.1
+pydantic==2.12.5
+pytorch-lightning==2.6.1
+PyYAML==6.0.3
+regex==2026.2.28
+requests==2.32.5
+safetensors==0.7.0
+scikit-image==0.25.2
+scipy==1.13.1
+sentencepiece==0.2.0
+supervision==0.27.0.post1
+tensorboardX==2.6.4
+tokenizers==0.22.2
+torch_fidelity==0.4.0
+torchmetrics==1.3.2
+tqdm==4.67.3
+transformers==5.2.0
+wandb
+

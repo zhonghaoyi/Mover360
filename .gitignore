@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime outputs and caches
+.cache/
+logs/
+wandb/
+*.log
+.gradio_tmp/
+
+# Checkpoints: keep only the small FAED evaluation weights in the repo
+checkpoints/*
+!checkpoints/faed.ckpt
