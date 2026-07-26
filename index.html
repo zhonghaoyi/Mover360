@@ -400,6 +400,36 @@
         }
         .results-figure .fig-caption { text-align: center; color: var(--muted); margin: 14px 0 0; font-size: 15px; line-height: 1.7; }
         .results-figure .fig-caption b { color: var(--text); }
+        .results-figure a.fig-zoom { display: block; cursor: zoom-in; }
+        .results-figure .fig-hint {
+            text-align: center; margin: 9px 0 0; font-size: 12.5px; color: var(--muted2);
+            letter-spacing: 0.02em;
+        }
+
+        /* ---------- Protocol sub-heading (Results) ---------- */
+        .protocol-head { max-width: 1000px; margin: 20px auto 14px; text-align: center; }
+        .protocol-head:first-of-type { margin-top: 10px; }
+        .protocol-head .tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 5px 14px 5px 12px; border-radius: 999px;
+            background: var(--accent-soft);
+            border: 1px solid rgba(18, 145, 216, 0.24);
+            color: var(--accent);
+            font-size: 12.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .protocol-head .tag .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .protocol-head h3 { margin: 12px 0 0; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+        .protocol-head p { margin: 7px auto 0; max-width: 52rem; font-size: 15px; line-height: 1.7; color: var(--muted); }
+        .protocol-head p b { color: var(--text); font-weight: 600; }
+        .protocol-head.alt .tag {
+            background: rgba(120, 86, 255, 0.09);
+            border-color: rgba(120, 86, 255, 0.24);
+            color: var(--accent2);
+        }
+        .protocol-divider {
+            max-width: 1000px; margin: 34px auto 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--hairline-strong) 22%, var(--hairline-strong) 78%, transparent);
+        }
 
         /* ---------- Comparison (quad) strip ---------- */
         .quad-wrap { position: relative; max-width: 1140px; margin: 0 auto; }
@@ -752,8 +782,17 @@
                 <h2>Comparison with State-of-the-Art</h2>
                 <div class="bar"></div>
             </div>
+            <div class="protocol-head">
+                <span class="tag"><span class="dot"></span>ERP protocol</span>
+                <h3>Baselines applied directly to the panorama</h3>
+                <p>Every editor receives the full equirectangular image, so it faces the horizontal wrap-around and
+                latitude-dependent distortion it was never trained on.</p>
+            </div>
             <div class="results-figure">
-                <img src="figures/compare_translation.jpg" alt="Qualitative comparison for the Translation task">
+                <a class="fig-zoom" href="figures/compare_translation.jpg" target="_blank" rel="noopener"
+                   title="Open the full-size figure">
+                    <img src="figures/compare_translation.jpg" alt="Qualitative comparison for the Translation task">
+                </a>
                 <p class="fig-caption">
                     <b>Translation.</b> Baselines often leave residual content at the source location, distort the moved
                     object, or produce less plausible contact with the target surface. Mover360 uses the point or region
@@ -761,7 +800,10 @@
                 </p>
             </div>
             <div class="results-figure" style="margin-top: 16px;">
-                <img src="figures/compare_insertion.jpg" alt="Qualitative comparison for the Insert task">
+                <a class="fig-zoom" href="figures/compare_insertion.jpg" target="_blank" rel="noopener"
+                   title="Open the full-size figure">
+                    <img src="figures/compare_insertion.jpg" alt="Qualitative comparison for the Insert task">
+                </a>
                 <p class="fig-caption">
                     <b>Insert.</b> Reference-guided baselines may copy viewpoint-specific appearance or produce
                     inconsistent object scale. Mover360 better adapts the inserted object to the target region and the
@@ -769,7 +811,10 @@
                 </p>
             </div>
             <div class="results-figure" style="margin-top: 16px;">
-                <img src="figures/compare_removal.jpg" alt="Qualitative comparison for the Remove task">
+                <a class="fig-zoom" href="figures/compare_removal.jpg" target="_blank" rel="noopener"
+                   title="Open the full-size figure">
+                    <img src="figures/compare_removal.jpg" alt="Qualitative comparison for the Remove task">
+                </a>
                 <p class="fig-caption">
                     <b>Remove.</b> LaMa is a strong specialized inpainting baseline, but Mover360 performs removal
                     within the same unified framework used for translation and insertion.
@@ -782,6 +827,38 @@
                     <button id="quadNext" class="demo-nav-btn demo-next" aria-label="Next">&#10095;</button>
                     <div id="quadStrip" class="quad-strip"></div>
                 </div>
+            </div>
+
+            <div class="protocol-divider"></div>
+            <div class="protocol-head alt">
+                <span class="tag"><span class="dot"></span>Perspective protocol</span>
+                <h3>A strictly favourable adaptation for the baselines</h3>
+                <p>To factor out ERP distortion entirely, the panorama is projected to a square pinhole view centred on
+                the edit region, with the field of view adaptively clipped to <b>35&deg;&ndash;150&deg;</b>. The baseline
+                edits natively inside this locally undistorted view, and the <b>whole</b> edited view is re-projected
+                back into the panorama — crediting every effect it produces beyond the target box, such as a cast
+                shadow. Mover360 still edits the panorama natively, and is composited the same way for fairness.</p>
+            </div>
+            <div class="results-figure">
+                <a class="fig-zoom" href="figures/compare_perspective.jpg" target="_blank" rel="noopener"
+                   title="Open the full-size figure">
+                    <img src="figures/compare_perspective.jpg"
+                         alt="Qualitative comparison under the perspective protocol, for Translation, Insert and Remove">
+                </a>
+                <p class="fig-caption">
+                    <b>Even with distortion removed, local cropping limits the baselines.</b> Rows show Translation
+                    (UE5), Insert (real), and Remove (UE5); columns show the input panorama with the instruction
+                    regions overlaid (source in <span style="color:#dc2626; font-weight:600;">red</span>, target in
+                    <span style="color:#16a34a; font-weight:600;">green</span>, reference inset for Insert), the square
+                    perspective view given to the baseline with its target box, the baseline's edited view, the
+                    baseline's final panorama after re-projection, Mover360 (mask), and the ground truth. The relocated
+                    car and the inserted backpack land where requested but lack the cast shadows and reflected
+                    illumination that Mover360 and the ground truth exhibit, since a correct shadow would have to be
+                    painted outside the target box. For Remove, the baseline erases the street light and the shadow
+                    inside its view, yet the long shadow sweeping across the plaza reaches far beyond any pinhole view
+                    of the lamp and survives — Mover360 removes the object together with its entire shadow.
+                </p>
+                <p class="fig-hint">Click any figure to open it full size</p>
             </div>
         </section>
 
@@ -844,8 +921,7 @@
                 <a href="#results">Comparisons</a>
             </div>
         </div>
-        <div class="footer-copy">&copy; 2026 Mover360 Team. All rights reserved. &middot; Page template adapted from the
-            <a href="https://world-shaper-project.github.io/" style="color:#9ca3af;">World-Shaper</a> project page &middot;
+        <div class="footer-copy">&copy; 2026 Mover360 Team. All rights reserved. &middot;
             360&deg; viewer: <a href="https://pannellum.org/" style="color:#9ca3af;">Pannellum</a></div>
     </footer>
 

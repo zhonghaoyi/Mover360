@@ -79,6 +79,5 @@ Reports FAED, PSNR, SSIM, LPIPS, DINOv3 similarity, and FID.
 python interactive.py --ckpt /path/to/mover360.ckpt --port 7860
 ```
 
-Launches a browser-based editor for point-, bbox-, and mask-guided panorama editing (results are written to `logs/interactive/`). Requires a CUDA GPU (roughly 24 GB of memory; on GPUs without bf16 support the demo falls back to fp16 automatically). Set `MOVER360_HF_CACHE` or pass `--huggingface-cache` to use a non-default Hugging Face cache location. See `python interactive.py --help` for all options.
 
-<sub>Site template adapted from the [World-Shaper](https://world-shaper-project.github.io/) project page · 360° viewer: [Pannellum](https://pannellum.org/) (MIT)</sub>
+<sub>360° viewer: [Pannellum](https://pannellum.org/) (MIT)</sub>
