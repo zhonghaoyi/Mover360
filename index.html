@@ -92,6 +92,13 @@
         }
         .top-nav a.btn-demo, .top-nav a.btn-demo:hover { color: #ffffff; }
         .btn-demo:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .top-nav a.nav-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; padding: 0; margin-left: 6px;
+            border-radius: 999px; font-size: 16px; color: #24292f;
+        }
+        .top-nav a.nav-icon.hf { color: var(--accent3, #f59e0b); font-size: 15px; }
+        .top-nav a.nav-icon:hover { background: rgba(15,23,42,0.07); }
 
         /* ---------- Layout ---------- */
         .container { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
@@ -178,7 +185,32 @@
         .hero-feature-badge i { font-size: 14px; color: var(--accent); }
         .hero-feature-badge:nth-child(2) i { color: #24292f; }
         .hero-feature-badge:nth-child(3) i { color: var(--accent3); }
-        .hero-feature-badge:hover { color: var(--text); border-color: rgba(18,145,216,0.5); transform: translateY(-1px); }
+        a.hero-feature-badge:hover { color: var(--text); border-color: rgba(18,145,216,0.5); transform: translateY(-1px); }
+        a.hero-feature-badge:hover .ext { opacity: 0.75; }
+        .hero-feature-badge .ext { font-size: 10px; opacity: 0; transition: opacity 160ms ease; margin-left: -2px; }
+        .hero-feature-badge.pending { border-style: dashed; color: var(--muted2); cursor: default; }
+        .hero-feature-badge.pending i { color: var(--muted2); }
+        .hero-feature-badge .soon {
+            font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+            color: var(--muted2); margin-left: 1px;
+        }
+
+        /* ---------- Inline resource links (Dataset section) ---------- */
+        .resource-links {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            margin: 22px 0 2px;
+        }
+        .resource-links a {
+            display: inline-flex; align-items: center; gap: 9px;
+            padding: 9px 18px; border-radius: 999px;
+            background: var(--surface); border: 1px solid var(--hairline-strong);
+            color: var(--muted); font-size: 14px; font-weight: 500; text-decoration: none;
+            transition: color 160ms ease, border-color 160ms ease, transform 160ms ease;
+        }
+        .resource-links a:hover { color: var(--text); border-color: rgba(18,145,216,0.5); transform: translateY(-1px); }
+        .resource-links a i { font-size: 14px; color: var(--accent3); }
+        .resource-links a.gh i { color: #24292f; }
+        .resource-links a .sub { color: var(--muted2); font-weight: 400; font-size: 13px; }
 
         .author-list { margin-top: 22px; display: flex; justify-content: center; }
         .author-card { text-align: center; padding: 0 12px; }
@@ -549,7 +581,14 @@
                 <a href="#dataset">Dataset</a>
                 <a href="#results">Comparisons</a>
                 <a href="#citation">BibTeX</a>
-                <a href="#" target="_blank" class="btn-demo">Paper</a>
+                <a class="nav-icon" href="https://github.com/zhonghaoyi/Mover360" target="_blank" rel="noopener"
+                   aria-label="Code on GitHub" title="Code on GitHub"><i class="fa-brands fa-github"></i></a>
+                <a class="nav-icon hf" href="https://huggingface.co/datasets/HaoyiZhong/Mover360-benchmark"
+                   target="_blank" rel="noopener" aria-label="Benchmark on Hugging Face"
+                   title="Benchmark on Hugging Face"><i class="fa-solid fa-database"></i></a>
+                <!-- EDIT ME: paste the arXiv / TVCG paper URL into href below, and add
+                     target="_blank" rel="noopener" once it points somewhere real. -->
+                <a href="#" class="btn-demo" title="Paper link will be added upon release">Paper</a>
             </nav>
         </div>
     </header>
@@ -569,9 +608,16 @@
                 </p>
 
                 <div class="hero-features">
-                    <span class="hero-feature-badge"><i class="fa-regular fa-file-lines"></i> Paper</span>
-                    <span class="hero-feature-badge"><i class="fa-brands fa-github"></i> GitHub</span>
-                    <span class="hero-feature-badge"><i class="fa-solid fa-database"></i> Dataset</span>
+                    <span class="hero-feature-badge pending" title="The paper link will be added upon release">
+                        <i class="fa-regular fa-file-lines"></i> Paper <span class="soon">soon</span></span>
+                    <a class="hero-feature-badge" href="https://github.com/zhonghaoyi/Mover360"
+                       target="_blank" rel="noopener" title="Code on GitHub">
+                        <i class="fa-brands fa-github"></i> GitHub
+                        <i class="fa-solid fa-arrow-up-right-from-square ext"></i></a>
+                    <a class="hero-feature-badge" href="https://huggingface.co/datasets/HaoyiZhong/Mover360-benchmark"
+                       target="_blank" rel="noopener" title="Mover360 benchmark on Hugging Face">
+                        <i class="fa-solid fa-database"></i> Dataset
+                        <i class="fa-solid fa-arrow-up-right-from-square ext"></i></a>
                 </div>
 
                 <div class="author-list">
@@ -774,6 +820,14 @@
                     reference-free scoring. The real set deliberately stresses long-range rearrangements: the median
                     great-circle displacement is 50.9&deg;, and a quarter of the moves exceed 103&deg;.</p>
                 </div>
+                <div class="resource-links">
+                    <a href="https://huggingface.co/datasets/HaoyiZhong/Mover360-benchmark" target="_blank" rel="noopener">
+                        <i class="fa-solid fa-database"></i> Download the benchmark
+                        <span class="sub">Hugging Face</span></a>
+                    <a class="gh" href="https://github.com/zhonghaoyi/Mover360" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-github"></i> Code &amp; usage
+                        <span class="sub">GitHub</span></a>
+                </div>
             </div>
         </section>
 
@@ -928,6 +982,8 @@
                 <a href="#approach">Approach</a>
                 <a href="#dataset">Dataset</a>
                 <a href="#results">Comparisons</a>
+                <a href="https://github.com/zhonghaoyi/Mover360" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://huggingface.co/datasets/HaoyiZhong/Mover360-benchmark" target="_blank" rel="noopener">Benchmark</a>
             </div>
         </div>
         <div class="footer-copy">&copy; 2026 Mover360 Team. All rights reserved. &middot;
