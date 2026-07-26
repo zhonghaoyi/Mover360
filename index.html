@@ -860,6 +860,15 @@
                 </p>
                 <p class="fig-hint">Click any figure to open it full size</p>
             </div>
+            <p class="section-subtitle">Interactive comparison under the perspective protocol — drag any viewer and the
+            other three follow.</p>
+            <div class="mt-3">
+                <div class="quad-wrap">
+                    <button id="persPrev" class="demo-nav-btn demo-prev" aria-label="Previous">&#10094;</button>
+                    <button id="persNext" class="demo-nav-btn demo-next" aria-label="Next">&#10095;</button>
+                    <div id="persStrip" class="quad-strip"></div>
+                </div>
+            </div>
         </section>
 
         <section id="applications">
@@ -1197,6 +1206,11 @@
                     extraHtml += '<span class="ref-box"><img class="ref-thumb" src="' + group.reference +
                         '" alt="Reference object"><span>Reference</span></span>';
                 }
+                (group.extras || []).forEach((ex) => {
+                    extraHtml += '<a class="instr-box" href="' + ex.src + '" target="_blank" rel="noopener" ' +
+                        'title="Open the full-size image"><img class="instr-thumb" src="' + ex.src +
+                        '" alt="' + ex.label + '"><span>' + ex.label + '</span></a>';
+                });
                 caption.innerHTML = extraHtml + '<span class="cap-text"><strong style="color:' + (group.color || '#0f172a') +
                     '">' + group.task + '.</strong> ' + group.prompt + '</span>';
                 page.appendChild(caption);
@@ -1267,6 +1281,65 @@
             groups: comparisonGroups.map(g => Object.assign({}, g, {
                 color: ({ 'Object Translation': '#1291d8', 'Object Insertion': '#7856ff', 'Object Removal': '#0fb5a0' })[g.task]
             }))
+        });
+
+        /* =====================================================================
+           EDIT ME — Perspective-protocol comparison (Fig. pers_compare).
+           Four synced panoramas per task: input, the baseline's re-projected
+           result, Mover360 (mask), and the ground truth. The two square
+           pinhole views handed to the baseline are shown as thumbnails.
+           ===================================================================== */
+        const perspectiveGroups = [
+            {
+                task: 'Object Translation',
+                color: '#1291d8',
+                labels: ['Input', 'Insert-Anything (persp.)', 'Mover360 (Ours)', 'Ground truth'],
+                items: [
+                    'figures/perspective/translation_input.jpg',
+                    'figures/perspective/translation_baseline.jpg',
+                    'figures/perspective/translation_ours.jpg',
+                    'figures/perspective/translation_gt.jpg'
+                ],
+                prompt: 'UE5 test set. The baseline edits an undistorted pinhole crop and re-projects it, so the relocated car arrives without the cast shadow and specular response that Mover360 and the ground truth both show — a correct shadow would fall outside its target box.',
+                reference: null,
+                instruction: 'figures/perspective/translation_instr.jpg',
+                extras: [{ src: 'figures/perspective/translation_persp.jpg', label: 'Pinhole view &rarr; edited' }]
+            },
+            {
+                task: 'Object Insertion',
+                color: '#7856ff',
+                labels: ['Input', 'Insert-Anything (persp.)', 'Mover360 (Ours)', 'Ground truth'],
+                items: [
+                    'figures/perspective/insert_input.jpg',
+                    'figures/perspective/insert_baseline.jpg',
+                    'figures/perspective/insert_ours.jpg',
+                    'figures/perspective/insert_gt.jpg'
+                ],
+                prompt: 'Real captured test set. The backpack lands where requested, but the reflected illumination and contact shadow that anchor it to the carpet only appear in Mover360 and the ground truth.',
+                reference: null,
+                instruction: 'figures/perspective/insert_instr.jpg',
+                extras: [{ src: 'figures/perspective/insert_persp.jpg', label: 'Pinhole view &rarr; edited' }]
+            },
+            {
+                task: 'Object Removal',
+                color: '#0fb5a0',
+                labels: ['Input', 'OmniPaint (persp.)', 'Mover360 (Ours)', 'Ground truth'],
+                items: [
+                    'figures/perspective/remove_input.jpg',
+                    'figures/perspective/remove_baseline.jpg',
+                    'figures/perspective/remove_ours.jpg',
+                    'figures/perspective/remove_gt.jpg'
+                ],
+                prompt: 'UE5 test set. The baseline clears the street light and the shadow inside its crop, yet the long shadow sweeping across the plaza reaches beyond any pinhole view of the lamp and survives. Mover360 removes the object together with its entire shadow.',
+                reference: null,
+                instruction: 'figures/perspective/remove_instr.jpg',
+                extras: [{ src: 'figures/perspective/remove_persp.jpg', label: 'Pinhole view &rarr; edited' }]
+            }
+        ];
+
+        initComparisonStrip({
+            stripId: 'persStrip', prevId: 'persPrev', nextId: 'persNext', height: 220,
+            groups: perspectiveGroups
         });
 
         /* =====================================================================
